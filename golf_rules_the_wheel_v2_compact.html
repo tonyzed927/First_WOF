@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Golf Rules: The Wheel — Responsive Edition</title>
+<style>
+  *{box-sizing:border-box}
+
+  html, body{
+    margin:0;
+    min-height:100%;
+    font-family:Arial, Helvetica, sans-serif;
+    background:radial-gradient(circle at top,#183f79,#071427 70%);
+    color:#fff;
+  }
+
+  body{
+    overflow-x:hidden;
+  }
+
+  .wrap{
+    width:min(1260px, 100%);
+    margin:0 auto;
+    padding:clamp(6px, 1.3vw, 12px);
+  }
+
+  h1{
+    text-align:center;
+    margin:4px 0 2px;
+    font-size:clamp(1.55rem, 4vw, 3.1rem);
+    line-height:1.05;
+  }
+
+  .subtitle{
+    text-align:center;
+    opacity:.92;
+    margin:0 0 clamp(6px, 1.2vw, 10px);
+    font-size:clamp(.9rem, 2.2vw, 1.05rem);
+  }
+
+  .game{
+    display:grid;
+    grid-template-columns:minmax(320px, 1fr) minmax(320px, 1fr);
+    gap:clamp(8px, 1.4vw, 14px);
+    align-items:start;
+  }
+
+  .panel{
+    background:rgba(255,255,255,.09);
+    border:2px solid rgba(255,255,255,.18);
+    border-radius:18px;
+    padding:clamp(9px, 1.4vw, 13px);
+    box-shadow:0 12px 30px rgba(0,0,0,.25);
+  }
+
+  .wheelbox{
+    position:relative;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:clamp(285px, 42vw, 500px);
+  }
+
+  canvas{
+    width:min(490px, 88vw, 100%);
+    height:auto;
+    max-width:490px;
+    aspect-ratio:1 / 1;
+    filter:drop-shadow(0 14px 20px rgba(0,0,0,.4));
+  }
+
+  .pointer{
+    position:absolute;
+    top:clamp(6px, 1.5vw, 14px);
+    left:50%;
+    transform:translateX(-50%);
+    width:0;
+    height:0;
+    border-left:clamp(14px, 2.4vw, 22px) solid transparent;
+    border-right:clamp(14px, 2.4vw, 22px) solid transparent;
+    border-top:clamp(28px, 5vw, 46px) solid #ffd34d;
+    z-index:2;
+    filter:drop-shadow(0 2px 2px #000);
+  }
+
+  .spin{
+    position:absolute;
+    width:clamp(88px, 16vw, 130px);
+    height:clamp(88px, 16vw, 130px);
+    border-radius:50%;
+    border:clamp(4px, .8vw, 6px) solid #fff;
+    background:#ffd34d;
+    color:#111;
+    font-weight:900;
+    font-size:clamp(.95rem, 2.5vw, 1.35rem);
+    cursor:pointer;
+    box-shadow:0 8px 0 #8a6500;
+  }
+
+  .spin:active{
+    transform:translateY(4px);
+    box-shadow:0 4px 0 #8a6500;
+  }
+
+  .spin:disabled{
+    background:#999;
+    color:#444;
+    cursor:not-allowed;
+    box-shadow:none;
+  }
+
+  .scorebar{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:8px;
+    margin-bottom:10px;
+  }
+
+  .score{
+    background:#0c2a55;
+    border-radius:12px;
+    padding:clamp(9px, 1.5vw, 12px);
+    text-align:center;
+    border:1px solid rgba(255,255,255,.18);
+    font-size:clamp(.85rem, 1.8vw, 1rem);
+  }
+
+  .score strong{
+    display:block;
+    color:#ffd34d;
+    font-size:clamp(1.25rem, 3vw, 1.65rem);
+    margin-top:4px;
+    word-break:break-word;
+  }
+
+  .category{
+    font-size:clamp(.95rem, 2.2vw, 1.1rem);
+    color:#ffd34d;
+    font-weight:800;
+    margin-bottom:8px;
+  }
+
+  .question{
+    font-size:clamp(1.05rem, 2.4vw, 1.34rem);
+    line-height:1.32;
+    font-weight:800;
+    margin:9px 0 10px;
+    min-height:clamp(48px, 8vw, 78px);
+  }
+
+  .answers{
+    display:grid;
+    gap:8px;
+  }
+
+  .answer{
+    width:100%;
+    padding:clamp(11px, 2vw, 14px);
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:800;
+    font-size:clamp(.9rem, 2vw, 1rem);
+    background:#f4f4f4;
+    color:#111;
+    text-align:left;
+    line-height:1.25;
+  }
+
+  .answer:hover{
+    filter:brightness(.92);
+  }
+
+  .answer.correct{
+    background:#baffb2;
+  }
+
+  .answer.wrong{
+    background:#ffb5b5;
+  }
+
+  .answer:disabled{
+    cursor:default;
+  }
+
+  .message{
+    min-height:clamp(48px, 8vw, 70px);
+    margin-top:10px;
+    padding:12px;
+    border-radius:12px;
+    background:rgba(255,255,255,.08);
+    line-height:1.35;
+    font-size:clamp(.9rem, 2vw, 1rem);
+  }
+
+  .controls{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:10px;
+  }
+
+  .ctrl{
+    border:none;
+    border-radius:10px;
+    padding:10px 12px;
+    font-weight:800;
+    cursor:pointer;
+    font-size:clamp(.9rem, 2vw, 1rem);
+  }
+
+  .bank{
+    background:#ffd34d;
+    color:#111;
+  }
+
+  .reset{
+    background:#fff;
+    color:#111;
+  }
+
+
+  @media(max-width:1100px){
+    .game{
+      grid-template-columns:1fr;
+    }
+
+    .wheelbox{
+      min-height:clamp(280px, 66vw, 470px);
+    }
+
+    canvas{
+      width:min(470px, 86vw);
+    }
+  }
+
+  @media(max-width:700px){
+    .scorebar{
+      grid-template-columns:1fr;
+    }
+
+    .controls{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+    }
+
+    .ctrl{
+      width:100%;
+    }
+
+    .wheelbox{
+      min-height:clamp(260px, 76vw, 360px);
+    }
+
+    canvas{
+      width:min(360px, 86vw);
+    }
+  }
+
+  @media(max-width:420px){
+    .controls{
+      grid-template-columns:1fr;
+    }
+
+    .wheelbox{
+      min-height:300px;
+    }
+
+    canvas{
+      width:86vw;
+    }
+
+    .spin{
+      width:82px;
+      height:82px;
+      font-size:.9rem;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Golf Rules: The Wheel</h1>
+  <div class="subtitle">Version 2 edited Official Guide / Committee Procedures edition — 7 categories, 3 questions each, 3 answers per question.</div>
+
+  <div class="game">
+    <div class="panel wheelbox">
+      <div class="pointer"></div>
+      <canvas id="wheel" width="760" height="760"></canvas>
+      <button class="spin" id="spinBtn" onclick="spinWheel()">SPIN</button>
+    </div>
+
+    <div class="panel">
+      <div class="scorebar">
+        <div class="score">Pot<strong id="pot">0</strong></div>
+        <div class="score">Banked<strong id="banked">0</strong></div>
+        <div class="score">Lives<strong id="lives">❤️❤️❤️</strong></div>
+      </div>
+
+      <div class="category" id="category">Spin the wheel to begin.</div>
+      <div class="question" id="question">The wheel will choose one of the seven Official Guide / Committee Procedures categories.</div>
+      <div class="answers" id="answers"></div>
+      <div class="message" id="message">Correct answers add to the pot. Wrong answers lose a life and clear the pot.</div>
+
+      <div class="controls">
+        <button class="ctrl bank" onclick="bankPot()">Bank Pot</button>
+        <button class="ctrl reset" onclick="resetGame()">Reset Game</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const segments = [
+  {cat:"Definitions", value:100, colour:"#ff5c5c"},
+  {cat:"Model Local Rules", value:150, colour:"#f7c96b"},
+  {cat:"Clarifications", value:200, colour:"#52d273"},
+  {cat:"Competitions (Sec 5)", value:250, colour:"#7cc7ff"},
+  {cat:"Competitions (Sec 6)", value:300, colour:"#c28cff"},
+  {cat:"Competitions (Sec 7)", value:350, colour:"#ff9adb"},
+  {cat:"Course Marking (Sec 2)", value:400, colour:"#ffe65c"}
+];
+
+const questions = {
+  "Definitions": [
+    {
+      "q": "Which statement best describes the Definition of 'Improve'?",
+      "a": [
+        "To change the physical conditions of the course for general maintenance.",
+        "To alter conditions affecting the stroke so that a player gains a potential advantage.",
+        "To restore conditions damaged during normal play by any player."
+      ],
+      "c": 1,
+      "note": "The Definition of Improve is about altering conditions affecting the stroke or other physical conditions affecting play so that a player gains a potential advantage."
+    },
+    {
+      "q": "Under the Definitions, who is an 'Opponent'?",
+      "a": [
+        "A player competing in the same group during stroke play.",
+        "A player whose score counts with another player's score.",
+        "A person a player competes against in a match."
+      ],
+      "c": 2,
+      "note": "Opponent applies in match play: the person a player competes against in a match."
+    },
+    {
+      "q": "Which best describes the Definition of a 'Round'?",
+      "a": [
+        "Eighteen or fewer holes played in the order set by the Committee.",
+        "Any stipulated number of holes completed during a competition.",
+        "Eighteen holes played by every competitor on the same day."
+      ],
+      "c": 0,
+      "note": "A round is 18 or fewer holes played in the order set by the Committee."
+    }
+  ],
+  "Model Local Rules": [
+    {
+      "q": "Model Local Rule B-3 deals with which subject?",
+      "a": [
+        "Alternative relief for a ball lost or out of bounds.",
+        "Opposite-side relief from a red penalty area.",
+        "A provisional ball for a ball in a penalty area."
+      ],
+      "c": 2,
+      "note": "Model Local Rule B-3 concerns a provisional ball for a ball in a penalty area."
+    },
+    {
+      "q": "Under Model Local Rule B-3, a provisional ball may be played when:",
+      "a": [
+        "It is uncertain whether a ball is in a specified penalty area and delay would otherwise result.",
+        "A ball may have crossed the edge of any penalty area during play.",
+        "A player intends to proceed under penalty-area relief regardless of where the ball is found."
+      ],
+      "c": 0,
+      "note": "B-3 is for specified penalty-area situations where uncertainty and delay justify allowing a provisional ball."
+    },
+    {
+      "q": "Model Local Rule E-5 provides an alternative to stroke and distance for:",
+      "a": [
+        "A ball that is unplayable anywhere on the course.",
+        "A ball that is lost or out of bounds.",
+        "A ball that cannot immediately be identified."
+      ],
+      "c": 1,
+      "note": "Model Local Rule E-5 provides an alternative to stroke and distance for a ball lost or out of bounds, where adopted."
+    }
+  ],
+  "Clarifications": [
+    {
+      "q": "Clarification Holed/1 says a ball embedded in the side of the hole is not holed if:",
+      "a": [
+        "All of the ball is not below the surface of the putting green.",
+        "Part of the ball is resting against the flagstick above the hole.",
+        "More than half of the ball remains above the surface of the putting green."
+      ],
+      "c": 0,
+      "note": "A ball embedded in the side of the hole is holed only when all of the ball is below the surface of the putting green."
+    },
+    {
+      "q": "Clarification Lost/1 says that the three-minute search time:",
+      "a": [
+        "Is suspended while a player returns to play a provisional ball.",
+        "Begins again when the player resumes the search.",
+        "Continues while the player returns to play a provisional ball."
+      ],
+      "c": 2,
+      "note": "The three-minute search time continues while the player returns to play a provisional ball."
+    },
+    {
+      "q": "Clarification NPCR/2 says a player is penalized only if:",
+      "a": [
+        "A ball is played from a relief area that does not satisfy the Rule.",
+        "The nearest point of complete relief is not measured with a club.",
+        "A referee later identifies a nearer point."
+      ],
+      "c": 0,
+      "note": "The issue is not an inaccurate identification by itself, but playing from a relief area that does not satisfy the Rule."
+    }
+  ],
+  "Competitions (Sec 5)": [
+    {
+      "q": "Section 5A says the Terms of the Competition determine matters such as:",
+      "a": [
+        "The Local Rules for every casual round.",
+        "Eligibility, entry, format, schedule and the method of deciding ties.",
+        "The order in which players search for a lost ball."
+      ],
+      "c": 1,
+      "note": "The Terms of the Competition include matters such as eligibility, entry, format, schedule and how ties will be decided."
+    },
+    {
+      "q": "Once a competition has started, the Committee should generally change the Terms only:",
+      "a": [
+        "In exceptional circumstances.",
+        "When the majority of competitors agree.",
+        "When weather conditions become significantly worse."
+      ],
+      "c": 0,
+      "note": "Once a competition has started, the Committee should generally avoid changing the Terms except in exceptional circumstances."
+    },
+    {
+      "q": "Before a competition, changes to course marking should be:",
+      "a": [
+        "Approved by players before play.",
+        "Introduced after the opening round.",
+        "Clearly communicated to players who regularly play the course."
+      ],
+      "c": 2,
+      "note": "Changes to course marking should be clearly communicated so players are less likely to proceed incorrectly."
+    }
+  ],
+  "Competitions (Sec 6)": [
+    {
+      "q": "Once the competition has started, Section 6 says the Committee is responsible for:",
+      "a": [
+        "Reviewing the Terms whenever conditions change.",
+        "Ensuring players have the information needed to play under the Rules.",
+        "Determining the order in which groups finish."
+      ],
+      "c": 1,
+      "note": "During the competition, the Committee is responsible for ensuring players have the information needed to play under the Rules."
+    },
+    {
+      "q": "If a player proceeds under a Rule that does not apply, the Committee should generally:",
+      "a": [
+        "Determine which Rule applies to the player's actions and rule accordingly.",
+        "Cancel the stroke and require it to be replayed.",
+        "Disqualify the player for applying the wrong Rule."
+      ],
+      "c": 0,
+      "note": "The Committee should determine which Rule actually applies to the player's actions and rule accordingly."
+    },
+    {
+      "q": "Section 6 recommends that players should be provided with information such as:",
+      "a": [
+        "The draw, starting list and Committee members.",
+        "The scorecard, player handbook and dress regulations.",
+        "Local Rules, Pace of Play Policy, Code of Conduct and any evacuation plan."
+      ],
+      "c": 2,
+      "note": "Section 6 recommends making prepared documents such as Local Rules, pace policy, Code of Conduct and any evacuation plan available to players."
+    }
+  ],
+  "Competitions (Sec 7)": [
+    {
+      "q": "Section 7 of Committee Procedures is headed:",
+      "a": [
+        "During the Competition.",
+        "After the Competition.",
+        "Completion of the Competition."
+      ],
+      "c": 1,
+      "note": "Section 7 of Committee Procedures is headed After the Competition."
+    },
+    {
+      "q": "Section 7A says that a tie in stroke play should be decided by:",
+      "a": [
+        "The method specified in the Terms of the Competition.",
+        "The method agreed by the tied players.",
+        "The order in which the players completed the round."
+      ],
+      "c": 0,
+      "note": "The Committee should apply the tie method specified in the Terms of the Competition."
+    },
+    {
+      "q": "Section 7B says the Terms of the Competition should specify:",
+      "a": [
+        "When prize presentations will take place.",
+        "When scorecards should be collected by the Committee.",
+        "When and how the result of the competition is final."
+      ],
+      "c": 2,
+      "note": "The Terms of the Competition should clarify when and how the result of the competition is final."
+    }
+  ],
+  "Course Marking (Sec 2)": [
+    {
+      "q": "Section 2 says that a well-marked course helps to:",
+      "a": [
+        "Reduce the need for detailed Local Rules.",
+        "Allow players to apply the Rules correctly and reduce confusion.",
+        "Ensure all players take relief in the same way."
+      ],
+      "c": 1,
+      "note": "A well-marked course helps players apply the Rules correctly and reduces confusion."
+    },
+    {
+      "q": "Section 2 says it is good practice for tee-markers to be placed approximately:",
+      "a": [
+        "Five to seven paces apart.",
+        "Three to five paces apart.",
+        "Seven to ten paces apart."
+      ],
+      "c": 0,
+      "note": "Section 2 states that it is good practice to place tee-markers approximately five to seven paces apart."
+    },
+    {
+      "q": "To avoid confusion with penalty areas, Section 2 recommends that boundary stakes should not normally be:",
+      "a": [
+        "Blue or green.",
+        "Red or yellow.",
+        "Black or orange."
+      ],
+      "c": 1,
+      "note": "Boundary stakes should normally be white, and red or yellow should be avoided to prevent confusion with penalty areas."
+    }
+  ]
+};
+
+let rotation = 0, spinning = false, current = null, currentQuestion = null, pot = 0, banked = 0, lives = 3;
+let questionPools = {};
+const canvas = document.getElementById("wheel"), ctx = canvas.getContext("2d");
+
+function shuffle(array){
+  const arr = array.slice();
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function resetQuestionPools(){
+  questionPools = {};
+  Object.keys(questions).forEach(cat => {
+    questionPools[cat] = shuffle([...Array(questions[cat].length).keys()]);
+  });
+}
+
+function getNextQuestion(cat){
+  if(!questionPools[cat] || questionPools[cat].length === 0){
+    questionPools[cat] = shuffle([...Array(questions[cat].length).keys()]);
+  }
+  const nextIndex = questionPools[cat].pop();
+  return questions[cat][nextIndex];
+}
+
+function shuffledAnswers(q){
+  const packed = q.a.map((text, idx) => ({ text, correct: idx === q.c }));
+  return shuffle(packed);
+}
+
+function drawWheel(){
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  const r = Math.min(canvas.width, canvas.height) * 0.44;
+  const centreR = r * 0.275;
+  const arc = Math.PI * 2 / segments.length;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(rotation);
+
+  for(let i=0;i<segments.length;i++){
+    const start=i*arc;
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,r,start,start+arc);
+    ctx.closePath();
+    ctx.fillStyle=segments[i].colour;
+    ctx.fill();
+    ctx.strokeStyle="#111";
+    ctx.lineWidth=Math.max(3, r * 0.015);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.rotate(start+arc/2);
+    ctx.textAlign="right";
+    ctx.fillStyle="#111";
+    ctx.font="bold " + Math.round(r * 0.068) + "px Arial";
+    wrapText(segments[i].cat, r-(r*0.075), -r*0.055, r*0.6, r*0.075);
+    ctx.font="bold " + Math.round(r * 0.064) + "px Arial";
+    ctx.fillText(segments[i].value, r-(r*0.075), r*0.13);
+    ctx.restore();
+  }
+
+  ctx.beginPath();
+  ctx.arc(0,0,centreR,0,Math.PI*2);
+  ctx.fillStyle="#ffd34d";
+  ctx.fill();
+  ctx.strokeStyle="#fff";
+  ctx.lineWidth=Math.max(5, r * 0.024);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function wrapText(text, x, y, maxWidth, lineHeight){
+  const words = text.split(' ');
+  let line = '', yy = y;
+  for(let n=0;n<words.length;n++){
+    const test = line + words[n] + ' ';
+    if(ctx.measureText(test).width > maxWidth && n > 0){
+      ctx.fillText(line.trim(), x, yy);
+      line = words[n] + ' ';
+      yy += lineHeight;
+    } else {
+      line = test;
+    }
+  }
+  ctx.fillText(line.trim(), x, yy);
+}
+
+function pickSegment(){
+  const arc=Math.PI*2/segments.length, pointerAngle=-Math.PI/2;
+  let angle=(pointerAngle-rotation)%(Math.PI*2);
+  if(angle<0) angle+=Math.PI*2;
+  return Math.floor(angle/arc);
+}
+
+function spinWheel(){
+  if(spinning || lives<=0) return;
+  spinning=true;
+  document.getElementById("spinBtn").disabled=true;
+  document.getElementById("answers").innerHTML="";
+  document.getElementById("message").textContent="The wheel is spinning...";
+  document.getElementById("question").textContent="";
+
+  const extra=(Math.PI*2)*(4+Math.random()*3)+Math.random()*Math.PI*2;
+  const start=rotation, end=rotation+extra, duration=2600, t0=performance.now();
+
+  function animate(t){
+    const p=Math.min((t-t0)/duration,1), ease=1-Math.pow(1-p,3);
+    rotation=start+(end-start)*ease;
+    drawWheel();
+    if(p<1) requestAnimationFrame(animate);
+    else{
+      spinning=false;
+      rotation=rotation%(Math.PI*2);
+      askQuestion(segments[pickSegment()]);
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+function askQuestion(seg){
+  current=seg;
+  currentQuestion = getNextQuestion(seg.cat);
+  document.getElementById("category").textContent=seg.cat+" — for "+seg.value;
+  document.getElementById("question").textContent=currentQuestion.q;
+  document.getElementById("message").textContent="Choose one of the three answers.";
+
+  const answers=document.getElementById("answers");
+  answers.innerHTML="";
+  shuffledAnswers(currentQuestion).forEach(item=>{
+    const btn=document.createElement("button");
+    btn.className="answer";
+    btn.textContent=item.text;
+    btn.onclick=()=>answer(btn, item.correct, currentQuestion.note);
+    answers.appendChild(btn);
+  });
+}
+
+function answer(button, correct, note){
+  document.querySelectorAll(".answer").forEach(b=>b.disabled=true);
+  if(correct){
+    button.classList.add("correct");
+    pot += current.value;
+    updateScores();
+    document.getElementById("message").innerHTML="Correct. "+current.value+" added to the pot.<br><strong>Guide note:</strong> "+note;
+  } else {
+    button.classList.add("wrong");
+    lives--;
+    pot = 0;
+    updateScores();
+    document.getElementById("message").innerHTML="Wrong. You lose a life and the pot is cleared.<br><strong>Guide note:</strong> "+note;
+    if(lives<=0){
+      document.getElementById("message").innerHTML += "<br><br><strong>Game over. Final banked score: "+banked+"</strong>";
+      return;
+    }
+  }
+  document.getElementById("spinBtn").disabled=false;
+}
+
+function bankPot(){
+  if(pot<=0){
+    document.getElementById("message").textContent="There is nothing in the pot to bank.";
+    return;
+  }
+  banked += pot;
+  pot = 0;
+  updateScores();
+  document.getElementById("message").textContent="Pot banked. Spin again.";
+}
+
+function updateScores(){
+  document.getElementById("pot").textContent=pot;
+  document.getElementById("banked").textContent=banked;
+  document.getElementById("lives").textContent="❤️".repeat(Math.max(lives,0));
+}
+
+function resetGame(){
+  rotation=0;
+  spinning=false;
+  current=null;
+  currentQuestion=null;
+  pot=0;
+  banked=0;
+  lives=3;
+  resetQuestionPools();
+
+  document.getElementById("spinBtn").disabled=false;
+  document.getElementById("category").textContent="Spin the wheel to begin.";
+  document.getElementById("question").textContent="The wheel will choose one of the seven Official Guide / Committee Procedures categories.";
+  document.getElementById("answers").innerHTML="";
+  document.getElementById("message").textContent="Correct answers add to the pot. Wrong answers lose a life and clear the pot.";
+
+  updateScores();
+  drawWheel();
+}
+
+window.addEventListener("resize", drawWheel);
+
+resetQuestionPools();
+drawWheel();
+updateScores();
+</script>
+</body>
+</html>
