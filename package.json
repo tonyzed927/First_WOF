@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 4173",
+    "build": "node --check src/app.js && node --check src/gameLogic.js && node --check src/questionBank.js",
+    "test": "npm run build && node tests/gameLogic.test.js"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}
